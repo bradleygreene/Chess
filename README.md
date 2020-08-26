@@ -4,9 +4,15 @@
 * [Setup](#setup)
 * [Updates](#updates)
 ## General Information
-Test
+Chess is ran with:
+- Python 2.7.17
+- Pygame 1.9.6
 ## Setup
-Test
+You can run the program by:
+1. Command line
+   - `$ python ChessMain.py`
+2. PyCharm
+   - running ChessMain.py
 ## Updates
 | Version | Description |
 | ----: | :---------------------- |
