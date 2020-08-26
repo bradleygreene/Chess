@@ -11,3 +11,4 @@ Test
 | Version | Description |
 | ----: | :---------------------- |
 | 0.1 | Intial setup on Github |
+| 1.0 | Drawing board with pieces |
