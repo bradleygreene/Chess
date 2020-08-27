@@ -33,8 +33,8 @@ def draw_pieces(screen, board):
     for row in range(DIMENSION):
         for column in range(DIMENSION):
             piece = board[row][column]
-            if piece!= "--":  # check to make sure it's not an empty square
-                screen.blit(IMAGES[piece],p.Rect(column*SQ_SIZE, row*SQ_SIZE, SQ_SIZE, SQ_SIZE))
+            if piece != "--":  # check to make sure it's not an empty square
+                screen.blit(IMAGES[piece], p.Rect(column*SQ_SIZE, row*SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
 
 def draw_game_state(screen, gs):
@@ -68,10 +68,38 @@ def main():
     gs = ChessEngine.GameState()
     load_images()
     running = True
+    square_selected = ()  # no square selected initially, keeps track of the last user click
+    player_clicks = []  # keeps track of player clicks [(1,2),(2,2)]
     while running:
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
+
+            # mouse handlers
+            elif e.type == p.MOUSEBUTTONDOWN:
+                location = p.mouse.get_pos()  # (x,y) location of mouse
+                column = location[0]//SQ_SIZE
+                row = location[1]//SQ_SIZE
+                if square_selected == (row, column):  # checking if user clicks the same square twice
+                    square_selected = ()  # deselects
+                    player_clicks = []  # clear player clicks
+                else:
+                    square_selected = (row, column)
+                    player_clicks.append(square_selected)
+                if len(player_clicks) == 2:
+                    move = ChessEngine.Move(player_clicks[0], player_clicks[1], gs.board)
+                    print(move.get_chess_notation())
+                    gs.make_move(move)
+
+                    # reset user clicks
+                    square_selected = ()
+                    player_clicks = []
+
+            # key handlers
+            elif e.type == p.KEYDOWN:
+                if e.key == p.K_z:
+                    gs.undo_move()
+                    
         draw_game_state(screen, gs)
         clock.tick(MAX_FPS)
         p.display.flip()
