@@ -23,10 +23,23 @@ class GameState:
         self.move_log = []
      
     def make_move(self, move):
+        """
+        Takes a move and executes it (does not work for castling, pawn promotion, and en-passant)
+        """
         self.board[move.start_row][move.start_column] = "--"
         self.board[move.end_row][move.end_column] = move.piece_moved
         self.move_log.append(move) 
         self.white_to_move = not self.white_to_move  # switching turns
+
+    def undo_move(self):
+        """
+        Undo the last move
+        """
+        if len(self.move_log) != 0:  # make sure that there is a move to undo
+            move = self.move_log.pop()
+            self.board[move.start_row][move.start_column] = move.piece_moved
+            self.board[move.end_row][move.end_column] = move.piece_captured
+            self.white_to_move = not self.white_to_move  # switcing turns
 
 
 class Move:
