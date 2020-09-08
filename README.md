@@ -24,3 +24,4 @@ You can run the program by either :
 | 0.1 | Initial setup on Github |
 | 0.2 | Drawing board with pieces |
 | 0.3 | Piece movement and 'undo' functionality |
+| 0.4 | Valid piece movement and check/checkmate validation |
