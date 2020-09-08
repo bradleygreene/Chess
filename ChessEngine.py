@@ -23,6 +23,10 @@ class GameState:
                                'B': self.get_bishop_moves, 'Q': self.get_queen_moves, 'K': self.get_king_moves}
         self.white_to_move = True
         self.move_log = []
+        self.white_king_location = (7,4)
+        self.black_king_location = (0,4)
+        self.checkmate = False
+        self.stalemate = False
      
     def make_move(self, move):
         """
@@ -32,6 +36,11 @@ class GameState:
         self.board[move.end_row][move.end_column] = move.piece_moved
         self.move_log.append(move) 
         self.white_to_move = not self.white_to_move  # switching turns
+        # update king's location if moved
+        if move.piece_moved == "wK":
+            self.white_king_location = (move.end_row, move.end_column)
+        elif move.piece_moved == "bK":
+            self.black_king_location = (move.end_row, move.end_column)
 
     def undo_move(self):
         """
@@ -42,15 +51,59 @@ class GameState:
             self.board[move.start_row][move.start_column] = move.piece_moved
             self.board[move.end_row][move.end_column] = move.piece_captured
             self.white_to_move = not self.white_to_move  # switching turns
+            # update king's location if moved
+            if move.piece_moved == "wK":
+                self.white_king_location = (move.start_row, move.start_column)
+            elif move.piece_moved == "bK":
+                self.black_king_location = (move.start_row, move.start_column)
     
     def get_valid_moves(self):
         """
-        Gets all valid moves from all possible moves.
-        Makes move, generates all possible moves again, checks if king can be attacked
+        Gets all valid moves from current player, makes move for each possible move,
+        generates all possible moves again (for opponent), checks if king can be attacked
         If king is safe -> valid move
+
         :return: list of valid moves only
         """
-        return self.get_all_possible_moves()  # TODO: actually check valid moves
+        moves = self.get_all_possible_moves()
+        for i in range(len(moves)-1, -1, -1):  # when removing from list, going backwards
+            self.make_move(moves[i])
+            self.white_to_move = not self.white_to_move
+            if self.in_check():
+                moves.remove(moves[i])  # king is not safe, not valid move
+            self.white_to_move = not self.white_to_move
+            self.undo_move() 
+        if len(moves) == 0:  # either checkmate or stalemate
+            if self.in_check():
+                self.checkmate = True
+            else:
+                self.stalemate = True
+        else:
+            self.checkmate = False
+            self.stalemate = False
+
+        return moves
+
+    def in_check(self):
+        """
+        Determine if current player is in check
+        """
+        if self.white_to_move:
+            return self.square_under_attack(self.white_king_location[0], self.white_king_location[1])
+        else:
+            return self.square_under_attack(self.black_king_location[0], self.black_king_location[1])
+
+    def square_under_attack(self, row, column):
+        """
+        Determine if enemy can attack the square row, column
+        """
+        self.white_to_move = not self.white_to_move  # switch to opponents turn
+        opponents_moves = self.get_all_possible_moves()
+        self.white_to_move = not self.white_to_move  # switch turns back
+        for move in opponents_moves:
+            if move.end_row == row and move.end_column == column:
+                return True
+        return False
 
     def get_all_possible_moves(self):
         """
@@ -103,7 +156,7 @@ class GameState:
         directions = ((-1, 0), (0, -1), (1, 0), (0, 1))  # up, left, down, right
         enemy_color = "b" if self.white_to_move else "w"
         for d in directions:
-            for i in range(1,8):
+            for i in range(1, 8):
                 end_row = row + d[0] * i
                 end_column = column + d[1] * i
                 if 0 <= end_row < 8 and 0 <= end_column < 8:
