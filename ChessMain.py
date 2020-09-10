@@ -13,11 +13,40 @@ MAX_FPS = 15  # for animation later on
 IMAGES = {}
 
 
+def animate_move(move, screen, board, clock):
+    """
+    Animating a move
+    """
+    global colors
+    delta_row = move.end_row - move.start_row
+    delta_column = move.end_column - move.start_column
+    frames_per_square = 7
+    frame_count = (abs(delta_row) + abs(delta_column)) * frames_per_square
+    for frame in range(frame_count+1):
+        row, column = (move.start_row + delta_row*frame/frame_count,
+                       move.start_column + delta_column*frame/frame_count)
+        draw_board(screen)
+        draw_pieces(screen, board)
+        # erase the piece moved from its ending square
+        color = colors[(move.end_row + move.end_column) % 2]
+        end_sqaure = p.Rect(move.end_column*SQ_SIZE, move.end_row*SQ_SIZE, SQ_SIZE, SQ_SIZE)
+        p.draw.rect(screen, color, end_sqaure)
+        # draw captured piece onto rectangle
+        if move.piece_captured != "--":
+            screen.blit(IMAGES[move.piece_captured], end_sqaure)
+        # draw moving piece
+        screen.blit(IMAGES[move.piece_moved], p.Rect(column*SQ_SIZE, row*SQ_SIZE, SQ_SIZE, SQ_SIZE))
+        p.display.flip()
+        clock.tick(60)
+
+
+
 def draw_board(screen):
     """
     Draws the squares on the board
     """
     # list of colors for chess board
+    global colors
     colors = [p.Color("beige"), p.Color("tan")]
     for row in range(DIMENSION):
         for column in range(DIMENSION):
@@ -87,6 +116,7 @@ def main():
     gs = ChessEngine.GameState()
     valid_moves = gs.get_valid_moves()
     move_made = False  # Flag variable for when a move is made
+    animate = False  # Flag variable for when to animate
     load_images()
     running = True
     square_selected = ()  # no square selected initially, keeps track of the last user click
@@ -114,6 +144,7 @@ def main():
                         if move == valid_moves[i]:
                             gs.make_move(valid_moves[i])
                             move_made = True
+                            animate = True
                             # reset user clicks
                             square_selected = ()
                             player_clicks = []
@@ -125,9 +156,13 @@ def main():
                 if e.key == p.K_z:
                     gs.undo_move()
                     move_made = True
+                    animate = False
         if move_made:
+            if animate:
+                animate_move(gs.move_log[-1], screen, gs.board, clock)
             valid_moves = gs.get_valid_moves()
             move_made = False
+            animate = False
         draw_game_state(screen, gs, valid_moves, square_selected)
         clock.tick(MAX_FPS)
         p.display.flip()
