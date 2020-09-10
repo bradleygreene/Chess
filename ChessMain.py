@@ -13,6 +13,19 @@ MAX_FPS = 15  # for animation later on
 IMAGES = {}
 
 
+def draw_board(screen):
+    """
+    Draws the squares on the board
+    """
+    # list of colors for chess board
+    global colors
+    colors = [p.Color("beige"), p.Color("tan")]
+    for row in range(DIMENSION):
+        for column in range(DIMENSION):
+            color = colors[(row + column) % 2]
+            p.draw.rect(screen, color, p.Rect(column*SQ_SIZE, row*SQ_SIZE, SQ_SIZE, SQ_SIZE))
+
+
 def animate_move(move, screen, board, clock):
     """
     Animating a move
@@ -40,20 +53,6 @@ def animate_move(move, screen, board, clock):
         clock.tick(60)
 
 
-
-def draw_board(screen):
-    """
-    Draws the squares on the board
-    """
-    # list of colors for chess board
-    global colors
-    colors = [p.Color("beige"), p.Color("tan")]
-    for row in range(DIMENSION):
-        for column in range(DIMENSION):
-            color = colors[(row + column) % 2]
-            p.draw.rect(screen, color, p.Rect(column*SQ_SIZE, row*SQ_SIZE, SQ_SIZE, SQ_SIZE))
-
-
 def draw_pieces(screen, board):
     """
     Draws the pieces on the board using the current gs.board
@@ -73,6 +72,22 @@ def draw_game_state(screen, gs, valid_moves, square_selected):
     draw_board(screen)  # draws the squares
     highlight_squares(screen, gs, valid_moves, square_selected)
     draw_pieces(screen, gs.board)  # draws pieces on top of squares
+
+
+def draw_text(screen, text):
+    """
+    Draws text on the screen
+    """
+    font = p.font.SysFont("Helvitca", 32, True, False)
+    text_object = font.render(text, 0, p.Color("Red"))
+    text_location = p.Rect(0, 0, WIDTH, HEIGHT).move(WIDTH/2 - text_object.get_width()/2,
+                                                     HEIGHT/2 - text_object.get_height()/2)
+    screen.blit(text_object, text_location)
+    font = p.font.SysFont("Helvitca", 24, True, False)
+    text_object = font.render("Press R to restart", 0, p.Color("Red"))
+    text_location = p.Rect(0, 0, WIDTH, HEIGHT).move(WIDTH / 2 - text_object.get_width() / 2,
+                                                     HEIGHT / 2 - text_object.get_height() / 2)
+    screen.blit(text_object, text_location.move(0, 50))
 
 
 def highlight_squares(screen, gs, valid_moves, square_selected):
@@ -121,42 +136,51 @@ def main():
     running = True
     square_selected = ()  # no square selected initially, keeps track of the last user click
     player_clicks = []  # keeps track of player clicks [(1,2),(2,2)]
+    game_over = False
     while running:
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
-
             # mouse handlers
             elif e.type == p.MOUSEBUTTONDOWN:
-                location = p.mouse.get_pos()  # (x,y) location of mouse
-                column = location[0]//SQ_SIZE
-                row = location[1]//SQ_SIZE
-                if square_selected == (row, column):  # checking if user clicks the same square twice
-                    square_selected = ()  # deselects
-                    player_clicks = []  # clear player clicks
-                else:
-                    square_selected = (row, column)
-                    player_clicks.append(square_selected)
-                if len(player_clicks) == 2:
-                    move = ChessEngine.Move(player_clicks[0], player_clicks[1], gs.board)
-                    print(move.get_chess_notation())
-                    for i in range(len(valid_moves)):
-                        if move == valid_moves[i]:
-                            gs.make_move(valid_moves[i])
-                            move_made = True
-                            animate = True
-                            # reset user clicks
-                            square_selected = ()
-                            player_clicks = []
-                    if not move_made:
-                        player_clicks = [square_selected]
-
+                if not game_over:
+                    location = p.mouse.get_pos()  # (x,y) location of mouse
+                    column = location[0]//SQ_SIZE
+                    row = location[1]//SQ_SIZE
+                    if square_selected == (row, column):  # checking if user clicks the same square twice
+                        square_selected = ()  # deselects
+                        player_clicks = []  # clear player clicks
+                    else:
+                        square_selected = (row, column)
+                        player_clicks.append(square_selected)
+                    if len(player_clicks) == 2:
+                        move = ChessEngine.Move(player_clicks[0], player_clicks[1], gs.board)
+                        for i in range(len(valid_moves)):
+                            if move == valid_moves[i]:
+                                gs.make_move(valid_moves[i])
+                                print(move.get_chess_notation())
+                                move_made = True
+                                animate = True
+                                # reset user clicks
+                                square_selected = ()
+                                player_clicks = []
+                        if not move_made:
+                            player_clicks = [square_selected]
             # key handlers
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z:
                     gs.undo_move()
                     move_made = True
                     animate = False
+                    game_over = False
+                if e.key == p.K_r:
+                    gs = ChessEngine.GameState()
+                    valid_moves = gs.get_valid_moves()
+                    square_selected = ()
+                    player_clicks = []
+                    move_made = False
+                    animate = False
+                    game_over = False
         if move_made:
             if animate:
                 animate_move(gs.move_log[-1], screen, gs.board, clock)
@@ -164,6 +188,16 @@ def main():
             move_made = False
             animate = False
         draw_game_state(screen, gs, valid_moves, square_selected)
+
+        if gs.checkmate:
+            game_over = True
+            if gs.white_to_move:
+                draw_text(screen, "Black wins by checkmate")
+            else:
+                draw_text(screen, "White wins by checkmate")
+        elif gs.stalemate:
+            game_over = True
+            draw_text(screen, "Stalemate")
         clock.tick(MAX_FPS)
         p.display.flip()
 
