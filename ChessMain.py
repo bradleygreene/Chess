@@ -18,7 +18,7 @@ def draw_board(screen):
     Draws the squares on the board
     """
     # list of colors for chess board
-    colors = [p.Color("tan"), p.Color("beige")]
+    colors = [p.Color("beige"), p.Color("tan")]
     for row in range(DIMENSION):
         for column in range(DIMENSION):
             color = colors[(row + column) % 2]
