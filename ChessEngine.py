@@ -135,9 +135,6 @@ class GameState:
 
         :return: list of valid moves only
         """
-        for log in self.castle_rights_log:
-            print(log.wKs, log.wQs, log.bKs, log.bQs, end=", ")
-        print()
         temp_enpassant_possible = self.enpassant_possible
         temp_castle_rights = CastleRights(self.current_castling_rights.wKs, self.current_castling_rights.bKs,
                                           self.current_castling_rights.wQs, self.current_castling_rights.bQs)

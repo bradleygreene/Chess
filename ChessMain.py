@@ -37,13 +37,32 @@ def draw_pieces(screen, board):
                 screen.blit(IMAGES[piece], p.Rect(column*SQ_SIZE, row*SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
 
-def draw_game_state(screen, gs):
+def draw_game_state(screen, gs, valid_moves, square_selected):
     """
     Responsible for all graphics in the current game state
     """
     draw_board(screen)  # draws the squares
-    # TODO: add in piece highlighting and move suggestions
+    highlight_squares(screen, gs, valid_moves, square_selected)
     draw_pieces(screen, gs.board)  # draws pieces on top of squares
+
+
+def highlight_squares(screen, gs, valid_moves, square_selected):
+    """
+    Highlight square selected and moves for piece selected
+    """
+    if square_selected != ():
+        row, column = square_selected
+        if gs.board[row][column][0] == ("w" if gs.white_to_move else "b"):  # square_selected is a piece that can move
+            # highlight selected square
+            surface = p.Surface((SQ_SIZE, SQ_SIZE))
+            surface.set_alpha(100)  # transparency value
+            surface.fill(p.Color("black"))
+            screen.blit(surface, (column*SQ_SIZE, row*SQ_SIZE))
+            # highlight moves from that square
+            surface.fill(p.Color("red"))
+            for move in valid_moves:
+                if move.start_row == row and move.start_column == column:
+                    screen.blit(surface, (move.end_column*SQ_SIZE, move.end_row*SQ_SIZE))
 
 
 def load_images():
@@ -109,7 +128,7 @@ def main():
         if move_made:
             valid_moves = gs.get_valid_moves()
             move_made = False
-        draw_game_state(screen, gs)
+        draw_game_state(screen, gs, valid_moves, square_selected)
         clock.tick(MAX_FPS)
         p.display.flip()
 
